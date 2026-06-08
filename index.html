@@ -86,6 +86,16 @@
       color: #fff;
       border-color: rgba(255,255,255,0.4);
     }
+    #credit {
+      position: fixed;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.35);
+      font: 400 12px/1 'Segoe UI', system-ui, sans-serif;
+      pointer-events: none;
+      z-index: 10;
+    }
     .type-btn.selected {
       background: rgba(255,200,60,0.2);
       border-color: rgba(255,200,60,0.6);
@@ -106,6 +116,7 @@
     <button class="type-btn" data-type="willow">Willow</button>
     <button class="type-btn" data-type="crackle">Crackle</button>
   </div>
+  <div id="credit">Created by Julie Huang zhongyunbell@gmail.com</div>
   <div id="ui">
     <button class="btn" id="showBtn">Auto Show</button>
     <button class="btn" id="finaleBtn">Grand Finale</button>
