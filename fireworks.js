@@ -13,32 +13,37 @@
   window.addEventListener('resize', resize);
   resize();
 
-  // ── Stars ──────────────────────────────────────────────
-  const stars = [];
-  function initStars() {
-    stars.length = 0;
-    const count = Math.floor((W * H) / 2000);
-    for (let i = 0; i < count; i++) {
-      stars.push({
-        x: Math.random() * W,
-        y: Math.random() * H * 0.85,
-        r: Math.random() * 1.6 + 0.3,
-        twinkleSpeed: Math.random() * 0.03 + 0.005,
-        twinkleOffset: Math.random() * Math.PI * 2,
-      });
-    }
-  }
-  initStars();
-  window.addEventListener('resize', initStars);
+  // ── Background: Van Gogh's Starry Night ───────────────
+  const bgImage = new Image();
+  bgImage.src = 'starry-night.jpg';
+  let bgReady = false;
+  bgImage.onload = () => { bgReady = true; };
 
-  function drawStars(t) {
-    for (const s of stars) {
-      const alpha = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.twinkleSpeed + s.twinkleOffset));
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,240,${alpha.toFixed(3)})`;
-      ctx.fill();
+  function drawBackground() {
+    if (!bgReady) {
+      ctx.fillStyle = '#0a0a2e';
+      ctx.fillRect(0, 0, W, H);
+      return;
     }
+    // Cover the canvas while preserving aspect ratio
+    const imgRatio = bgImage.width / bgImage.height;
+    const canvasRatio = W / H;
+    let drawW, drawH, offsetX, offsetY;
+    if (canvasRatio > imgRatio) {
+      drawW = W;
+      drawH = W / imgRatio;
+      offsetX = 0;
+      offsetY = (H - drawH) / 2;
+    } else {
+      drawH = H;
+      drawW = H * imgRatio;
+      offsetX = (W - drawW) / 2;
+      offsetY = 0;
+    }
+    ctx.drawImage(bgImage, offsetX, offsetY, drawW, drawH);
+    // Slight dark overlay so fireworks pop against the painting
+    ctx.fillStyle = 'rgba(0, 0, 10, 0.25)';
+    ctx.fillRect(0, 0, W, H);
   }
 
   // ── Color palettes ────────────────────────────────────
@@ -227,11 +232,27 @@
     }
   }
 
+  // ── Explosion type selector ────────────────────────────
+  let selectedType = 'random';
+  const typeBar = document.getElementById('type-bar');
+  typeBar.addEventListener('click', (e) => {
+    const btn = e.target.closest('.type-btn');
+    if (!btn) return;
+    typeBar.querySelector('.selected').classList.remove('selected');
+    btn.classList.add('selected');
+    selectedType = btn.dataset.type;
+  });
+
+  // Map type names to numeric ranges used by the explode function
+  const typeMap = { spherical: 0, ring: 0.4, double: 0.6, willow: 0.8, crackle: 0.95 };
+
   // ── Explosion types ───────────────────────────────────
   function explode(x, y, palette) {
     flashes.push(new Flash(x, y, palette));
 
-    const type = Math.random();
+    const type = selectedType === 'random'
+      ? Math.random()
+      : typeMap[selectedType];
 
     if (type < 0.3) {
       // Spherical burst
@@ -340,9 +361,13 @@
     }
   });
 
+  // ── Prevent UI clicks from launching fireworks ─────────
+  document.getElementById('ui').addEventListener('click', (e) => e.stopPropagation());
+  typeBar.addEventListener('click', (e) => e.stopPropagation());
+
   // ── Click to launch ───────────────────────────────────
   let hintVisible = true;
-  canvas.addEventListener('click', (e) => {
+  document.addEventListener('click', (e) => {
     if (hintVisible) {
       hint.style.opacity = '0';
       hintVisible = false;
@@ -357,22 +382,9 @@
     requestAnimationFrame(loop);
     frame++;
 
-    // Dark sky with slight fade (creates trail effect)
-    ctx.fillStyle = 'rgba(0, 0, 8, 0.2)';
-    ctx.fillRect(0, 0, W, H);
-
-    // Redraw stars on a clean pass every ~60 frames to prevent them fading
-    if (frame % 60 === 0) {
-      // Redraw sky gradient
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-      skyGrad.addColorStop(0, '#000010');
-      skyGrad.addColorStop(0.6, '#000818');
-      skyGrad.addColorStop(1, '#0a0a1a');
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, W, H);
-    }
-
-    drawStars(t);
+    // Redraw the painting each frame — particles are drawn on top
+    // and naturally fade via their own alpha/life, no overlay needed
+    drawBackground();
 
     // Auto show logic
     if (autoShow) {
@@ -420,13 +432,7 @@
     }
   }
 
-  // Initial sky
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
-  skyGrad.addColorStop(0, '#000010');
-  skyGrad.addColorStop(0.6, '#000818');
-  skyGrad.addColorStop(1, '#0a0a1a');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, W, H);
-
+  // Initial background
+  drawBackground();
   requestAnimationFrame(loop);
 })();
